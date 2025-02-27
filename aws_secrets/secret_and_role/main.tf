@@ -1,4 +1,4 @@
-locals{
+locals {
   secret_name = keys(var.aws_secrets)[0]
 }
 
@@ -7,30 +7,30 @@ resource "aws_iam_role" "secret_iam_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-    for curr_repo in var.aws_secrets[local.secret_name].github_repos_to_allow : {
-      Effect = "Allow"
-      Principal = {
-        Federated = "arn:aws:iam::${var.aws_account_id}:oidc-provider/token.actions.githubusercontent.com"
-      }
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+      for curr_repo in var.aws_secrets[local.secret_name].github_repos_to_allow : {
+        Effect = "Allow"
+        Principal = {
+          Federated = "arn:aws:iam::${var.aws_account_id}:oidc-provider/token.actions.githubusercontent.com"
         }
-        StringLike = {
-          "sts:RoleSessionName" = var.aws_secrets[local.secret_name].session_name_to_allow
-          "token.actions.githubusercontent.com:sub" = "repo:${curr_repo.github_organisation}/${curr_repo.repo_name}:${curr_repo.branch_ref}"
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "sts:RoleSessionName"                     = var.aws_secrets[local.secret_name].session_name_to_allow
+            "token.actions.githubusercontent.com:sub" = "repo:${curr_repo.github_organisation}/${curr_repo.repo_name}:${curr_repo.branch_ref}"
+          }
         }
       }
-    }
     ]
   })
 }
 
 resource "aws_iam_role_policy" "secret_policy" {
   count = 0
-  name = "PolicyToAccess_${local.secret_name}_FromGithub"
-  role = aws_iam_role.secret_iam_role.id
+  name  = "PolicyToAccess_${local.secret_name}_FromGithub"
+  role  = aws_iam_role.secret_iam_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -46,8 +46,8 @@ resource "aws_iam_role_policy" "secret_policy" {
         Resource = aws_secretsmanager_secret.this_secret.arn
       },
       {
-        Effect = "Allow",
-        Action = "secretsmanager:GetRandomPassword",
+        Effect   = "Allow",
+        Action   = "secretsmanager:GetRandomPassword",
         Resource = "*"
       }
     ]
@@ -55,8 +55,8 @@ resource "aws_iam_role_policy" "secret_policy" {
 }
 
 resource "aws_secretsmanager_secret" "this_secret" {
-  name            = local.secret_name
-  description     = var.aws_secrets[local.secret_name].secret_description
+  name                    = local.secret_name
+  description             = var.aws_secrets[local.secret_name].secret_description
   recovery_window_in_days = var.aws_secrets[local.secret_name].secret_recovery_window_days
 
   policy = jsonencode({
@@ -66,7 +66,7 @@ resource "aws_secretsmanager_secret" "this_secret" {
       Principal = {
         AWS = "arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role.name}"
       }
-      Action = "secretsmanager:*"
+      Action   = "secretsmanager:*"
       Resource = "*"
     }]
   })
