@@ -10,7 +10,7 @@ resource "aws_iam_role" "secret_iam_role" {
     for curr_repo in var.aws_secrets[local.secret_name].github_repos_to_allow : {
       Effect = "Allow"
       Principal = {
-        Federated = "arn:aws:iam::${var.aws_accout_id}:oidc-provider/token.actions.githubusercontent.com"
+        Federated = "arn:aws:iam::${var.aws_account_id}:oidc-provider/token.actions.githubusercontent.com"
       }
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
@@ -64,7 +64,7 @@ resource "aws_secretsmanager_secret" "this_secret" {
     Statement = [{
       Effect = "Allow"
       Principal = {
-        AWS = "arn:aws:iam::${var.aws_accout_id}:role/${aws_iam_role.secret_iam_role.name}"
+        AWS = "arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role.name}"
       }
       Action = "secretsmanager:*"
       Resource = "*"
@@ -77,3 +77,5 @@ resource "aws_secretsmanager_secret" "this_secret" {
 output "secret_id" {
   value = aws_secretsmanager_secret.this_secret.id
 }
+
+

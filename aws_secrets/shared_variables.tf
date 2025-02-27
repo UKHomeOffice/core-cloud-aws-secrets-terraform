@@ -11,12 +11,12 @@ variable "aws_secrets" {
       )
       branch_ref = optional(string,"*")               # Branch allowed to access the secret; ideally should me 'main'
     }))
-    tags = (map(object({                              # Tags to be applied to the secret (required by the SCP)
+    tags = object({                              # Tags to be applied to the secret 
       account-code    = string
       cost-centre     = string
       service-id      = string
       portfolio-id    = string
       project-id      = string
-    })))
+    })
   }))
 }
