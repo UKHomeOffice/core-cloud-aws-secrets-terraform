@@ -1,39 +1,47 @@
-# core-cloud-aws-secrets-terraform
+This module creates just an empty secret with some basic information. The idea is to create the secret with all the required tags and corresponding role(s) with relevant permissions so the secret can be readily accessed from the corresponding github action(s).
 
-This repository contains the core Terraform aws secrets module for the Core Cloud Platform.
+Though doesn't support readily this module can easily be extended to configure rotation policies and maintaining the secret values. The implementor is responsible to take sufficient security measures.
 
-## Modules
+Following is an example of implementing rotation policy to one of the secrets:
 
-The following modules are available:
+```
+module "secrets" {
+  source = <url to this module>
 
-- [AWS](./modules/aws_secrets/README.md)
+  aws_secrets = <dictionary with the secrets>
+}
 
-## Example Usage
+# If required, code for managing the lambda(s) for secret rotation
 
-Example usage can be found in the README of each module. 
+# Adding rotation policy to just one secret - for example
+resource "aws_secretsmanager_secret_rotation" "example" {
+  secret_id           = module.secrets["name_of_the_secret_to_rotate"].secret_id
+  rotation_lambda_arn = <lambda arn for the secret rotation>
 
-<!-- BEGIN_TF_DOCS -->
-## Requirements
+  rotation_rules {
+    automatically_after_days = 30
+  }
+}
+```
 
-No requirements.
+Following is an example of managing secret values to one of the secrets:
 
-## Providers
+```
+module "secrets" {
+  source = <url to this module>
 
-No providers.
+  aws_secrets = <dictionary with the secrets>
+}
 
-## Modules
+# Single string value
+resource "aws_secretsmanager_secret_version" "example" {
+  secret_id     = module.secrets["name_of_the_secret_to_manage"].secret_id
+  secret_string = "example-string-to-protect"
+}
 
-No modules.
-
-## Resources
-
-No resources.
-
-## Inputs
-
-No inputs.
-
-## Outputs
-
-No outputs.
-<!-- END_TF_DOCS -->
+# Key/value value
+resource "aws_secretsmanager_secret_version" "example" {
+  secret_id     = module.secrets["name_of_the_secret_to_manage"].secret_id
+  secret_string = jsonencode(var.example)
+}
+```
