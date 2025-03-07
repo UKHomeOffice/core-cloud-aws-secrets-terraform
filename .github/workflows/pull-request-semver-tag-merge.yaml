@@ -1,3 +1,4 @@
+
 name: 'SemVer Tag on Main Merge'
 on:
   pull_request:
@@ -43,4 +44,4 @@ jobs:
         uses: UKHomeOffice/semver-tag-action@v4
         with:
           tag: ${{ steps.calculate.outputs.version }}
-          github_token: ${{ steps.app-token.outputs.token }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
