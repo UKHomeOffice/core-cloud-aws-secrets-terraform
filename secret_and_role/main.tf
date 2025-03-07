@@ -27,33 +27,6 @@ resource "aws_iam_role" "secret_iam_role" {
   })
 }
 
-resource "aws_iam_role_policy" "secret_policy" {
-  count = 0
-  name  = "PolicyToAccess_${local.secret_name}_FromGithub"
-  role  = aws_iam_role.secret_iam_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetResourcePolicy",
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret",
-          "secretsmanager:ListSecretVersionIds"
-        ],
-        Resource = aws_secretsmanager_secret.this_secret.arn
-      },
-      {
-        Effect   = "Allow",
-        Action   = "secretsmanager:GetRandomPassword",
-        Resource = "*"
-      }
-    ]
-  })
-}
-
 resource "aws_secretsmanager_secret" "this_secret" {
   name                    = local.secret_name
   description             = var.aws_secrets[local.secret_name].secret_description
@@ -66,7 +39,12 @@ resource "aws_secretsmanager_secret" "this_secret" {
       Principal = {
         AWS = "arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role.name}"
       }
-      Action   = "secretsmanager:*"
+      Action = [
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecretVersionIds"
+        ],
       Resource = "*"
     }]
   })
