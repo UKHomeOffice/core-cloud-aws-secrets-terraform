@@ -27,10 +27,15 @@ resource "aws_iam_role" "secret_iam_role" {
   })
 }
 
+resource "aws_kms_key" "secrets" {
+  enable_key_rotation = true
+}
+
 resource "aws_secretsmanager_secret" "this_secret" {
   name                    = local.secret_name
   description             = var.aws_secrets[local.secret_name].secret_description
   recovery_window_in_days = var.aws_secrets[local.secret_name].secret_recovery_window_days
+  kms_key_id              = aws_kms_key.secrets.arn
 
   policy = jsonencode({
     Version = "2012-10-17"
