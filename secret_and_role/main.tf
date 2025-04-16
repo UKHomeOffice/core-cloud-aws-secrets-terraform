@@ -62,3 +62,26 @@ output "secret_id" {
 }
 
 
+resource "aws_iam_policy" "access_to_secret_kms" {
+  name =  "cc-access-to-kms-${local.secret_name}"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+        {    
+            Action = [
+              "kms: DescribeKey",
+              "kms: Decrypt",
+              "kms: ListAliases"
+            ]
+            Effect = "Allow"
+            Resource = aws_kms_key.secrets.arn
+        }
+      ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_kms_access_policy" {
+  role = aws_iam_role.secret_iam_role.name
+  policy_arn = aws_iam_policy.access_to_secret_kms.arn
+} 
+  
