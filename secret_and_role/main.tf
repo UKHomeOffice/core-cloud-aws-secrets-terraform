@@ -3,6 +3,7 @@ locals {
 }
 
 resource "aws_iam_role" "secret_iam_role" {
+  count = length(var.aws_secrets[local.secret_name].github_repos_to_allow) > 0 ? 1 : 0
   name = "RoleToAccess_${local.secret_name}_FromGithub"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -42,7 +43,10 @@ resource "aws_secretsmanager_secret" "this_secret" {
     Statement = [{
       Effect = "Allow"
       Principal = {
-        AWS = "arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role.name}"
+        AWS = concat(
+          length(aws_iam_role.secret_iam_role) > 0 ? ["arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role[0].name}"] : [], 
+          formatlist("arn:aws:iam::${var.aws_account_id}:role/%s", var.aws_secrets[local.secret_name].iam_roles)
+          )
       }
       Action = [
           "secretsmanager:GetResourcePolicy",
@@ -81,7 +85,13 @@ resource "aws_iam_policy" "access_to_secret_kms" {
 }
 
 resource "aws_iam_role_policy_attachment" "attach_kms_access_policy" {
-  role = aws_iam_role.secret_iam_role.name
+  count = length(var.aws_secrets[local.secret_name].github_repos_to_allow) > 0 ? 1 : 0
+  role = aws_iam_role.secret_iam_role[0].name
   policy_arn = aws_iam_policy.access_to_secret_kms.arn
-} 
-  
+}
+
+resource "aws_iam_role_policy_attachment" "attach_kms_access_policy_iam_roles" {
+  for_each = toset(var.aws_secrets[local.secret_name].iam_roles)
+  role = each.key
+  policy_arn = aws_iam_policy.access_to_secret_kms.arn
+}
