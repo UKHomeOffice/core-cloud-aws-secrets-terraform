@@ -7,7 +7,7 @@ Referring to the attributes:
 
 of `aws_secrets` variable in (shared_varibles.tf)[./shared_varibles.tf] - they are made optional. A secret can be created with no access by any other resource. 
 
-Either of the github actions/workflows or just a role or both can be provided access. 
+Either of the github actions/workflows roles or just IAM roles or both can be provided access. 
 
 Each role name within the `iam_roles` must be an existing (previously created) role.
 
