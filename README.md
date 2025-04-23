@@ -5,11 +5,11 @@ Referring to the attributes:
 * github_repos_to_allow
 * iam_roles
 
-of `aws_secrets` variable in (shared_vraibles.tf)[./shared_vraibles.tf] - they are made optional. A secret can be created with no access by any other resource. 
+of `aws_secrets` variable in (shared_varibles.tf)[./shared_varibles.tf] - they are made optional. A secret can be created with no access by any other resource. 
 
-Either of the github actions/workflows or the just a role or both can be provided access. 
+Either of the github actions/workflows or just a role or both can be provided access. 
 
-The role name within the `iam_role` must be an existing (previously created) role.
+Each role name within the `iam_roles` must be an existing (previously created) role.
 
 Though doesn't support readily this module can easily be extended to configure rotation policies and maintaining the secret values. The implementor is responsible to take sufficient security measures.
 
