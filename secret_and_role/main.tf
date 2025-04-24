@@ -1,5 +1,11 @@
+data "aws_iam_roles" "existing_roles" {
+  for_each = toset(var.aws_secrets[local.secret_name].iam_roles)
+  name_regex = each.key
+}
+
 locals {
   secret_name = keys(var.aws_secrets)[0]
+  existing_roles = [for each in data.aws_iam_roles.existing_roles: tolist(each.names)[0] if length(each.names) > 0]
 }
 
 resource "aws_iam_role" "secret_iam_role" {
@@ -45,7 +51,7 @@ resource "aws_secretsmanager_secret" "this_secret" {
       Principal = {
         AWS = concat(
           length(aws_iam_role.secret_iam_role) > 0 ? ["arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role[0].name}"] : [], 
-          formatlist("arn:aws:iam::${var.aws_account_id}:role/%s", var.aws_secrets[local.secret_name].iam_roles)
+          formatlist("arn:aws:iam::${var.aws_account_id}:role/%s", local.existing_roles)
           )
       }
       Action = [
@@ -91,7 +97,7 @@ resource "aws_iam_role_policy_attachment" "attach_kms_access_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "attach_kms_access_policy_iam_roles" {
-  for_each = toset(var.aws_secrets[local.secret_name].iam_roles)
+  for_each = toset(local.existing_roles)
   role = each.key
   policy_arn = aws_iam_policy.access_to_secret_kms.arn
 }
