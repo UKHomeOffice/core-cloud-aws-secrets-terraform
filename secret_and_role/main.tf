@@ -73,9 +73,9 @@ resource "aws_iam_policy" "access_to_secret_kms" {
     Statement = [
         {    
             Action = [
-              "kms: DescribeKey",
-              "kms: Decrypt",
-              "kms: ListAliases"
+              "kms:DescribeKey",
+              "kms:Decrypt",
+              "kms:ListAliases"
             ]
             Effect = "Allow"
             Resource = aws_kms_key.secrets.arn
