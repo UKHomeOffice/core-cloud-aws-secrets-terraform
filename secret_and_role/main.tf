@@ -4,7 +4,7 @@ locals {
 
 resource "aws_iam_role" "secret_iam_role" {
   count = length(var.aws_secrets[local.secret_name].github_repos_to_allow) > 0 ? 1 : 0
-  name = "cc-observability-awssecret-${local.secret_name}-fromgithub-role"
+  name = "cc-observability-secret-${local.secret_name}-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
