@@ -13,11 +13,15 @@ variable "aws_secrets" {
     })), [])
     iam_roles = optional(list(string), []) # A list of existing IAM role names which can access this secret.
     tags = object({                        # Tags to be applied to the secret 
-      account-code = string
-      cost-centre  = string
-      service-id   = string
-      portfolio-id = string
-      project-id   = string
+      account-code     = string
+      cost-centre      = string
+      service-id       = string
+      portfolio-id     = string
+      project-id       = string
+      owner-business   = string
+      budget-holder    = string
+      environment-type = string
+      source-repo      = string
     })
   }))
 }
