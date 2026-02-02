@@ -26,10 +26,12 @@ resource "aws_iam_role" "secret_iam_role" {
       }
     ]
   })
+  tags = var.aws_secrets[local.secret_name].tags
 }
 
 resource "aws_kms_key" "secrets" {
   enable_key_rotation = true
+  tags = var.aws_secrets[local.secret_name].tags
 }
 
 resource "aws_secretsmanager_secret" "this_secret" {
@@ -82,6 +84,7 @@ resource "aws_iam_policy" "access_to_secret_kms" {
         }
       ]
   })
+  tags = var.aws_secrets[local.secret_name].tags
 }
 
 resource "aws_iam_role_policy_attachment" "attach_kms_access_policy" {
