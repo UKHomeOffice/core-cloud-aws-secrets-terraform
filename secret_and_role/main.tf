@@ -84,6 +84,7 @@ resource "aws_kms_key" "secrets" {
   policy              = data.aws_iam_policy_document.secrets_kms.json
   tags                = var.aws_secrets[local.secret_name].tags
 }
+
 resource "aws_secretsmanager_secret" "this_secret" {
   name                    = local.secret_name
   description             = var.aws_secrets[local.secret_name].secret_description
@@ -113,6 +114,7 @@ resource "aws_secretsmanager_secret" "this_secret" {
 output "secret_id" {
   value = aws_secretsmanager_secret.this_secret.id
 }
+
 resource "aws_iam_policy" "access_to_secret_kms" {
   name =  "cc-access-to-kms-${local.secret_name}"
   policy = jsonencode({
@@ -131,11 +133,13 @@ resource "aws_iam_policy" "access_to_secret_kms" {
   })
   tags = var.aws_secrets[local.secret_name].tags
 }
+
 resource "aws_iam_role_policy_attachment" "attach_kms_access_policy" {
   count = length(var.aws_secrets[local.secret_name].github_repos_to_allow) > 0 ? 1 : 0
   role = aws_iam_role.secret_iam_role[0].name
   policy_arn = aws_iam_policy.access_to_secret_kms.arn
 }
+
 resource "aws_iam_role_policy_attachment" "attach_kms_access_policy_iam_roles" {
   for_each = toset(var.aws_secrets[local.secret_name].iam_roles)
   role = each.key
