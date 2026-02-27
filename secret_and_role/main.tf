@@ -1,7 +1,6 @@
 locals {
   secret_name = keys(var.aws_secrets)[0]
 }
-
 resource "aws_iam_role" "secret_iam_role" {
   count = length(var.aws_secrets[local.secret_name].github_repos_to_allow) > 0 ? 1 : 0
   name = "cc-observability-secret-${local.secret_name}-role"
@@ -29,17 +28,67 @@ resource "aws_iam_role" "secret_iam_role" {
   tags = var.aws_secrets[local.secret_name].tags
 }
 
-resource "aws_kms_key" "secrets" {
-  enable_key_rotation = true
-  tags = var.aws_secrets[local.secret_name].tags
+data "aws_iam_policy_document" "secrets_kms" {
+  statement {
+    sid    = "EnableIAMUserPermissions"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.aws_account_id}:root"]
+    }
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+  statement {
+    sid    = "DynatraceSecretAccessRole"
+    effect = "Allow"
+    principals {
+      type = "AWS"
+      identifiers = concat(
+        length(aws_iam_role.secret_iam_role) > 0
+          ? ["arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role[0].name}"]
+          : [],
+        formatlist("arn:aws:iam::${var.aws_account_id}:role/%s", var.aws_secrets[local.secret_name].iam_roles)
+      )
+    }
+    actions = [
+      "kms:Decrypt",
+      "kms:GenerateDataKey",
+      "kms:DescribeKey",
+    ]
+    resources = ["*"]
+  }
+  statement {
+    sid    = "AllowSSOAdministratorAccessRole"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.aws_account_id}:root"]
+    }
+    actions = [
+      "kms:Decrypt",
+      "kms:GenerateDataKey",
+      "kms:DescribeKey",
+    ]
+    resources = ["*"]
+    condition {
+      test     = "StringLike"
+      variable = "aws:PrincipalArn"
+      values   = ["arn:aws:iam::${var.aws_account_id}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_AdministratorAccess_*"]
+    }
+  }
 }
 
+resource "aws_kms_key" "secrets" {
+  enable_key_rotation = true
+  policy              = data.aws_iam_policy_document.secrets_kms.json
+  tags                = var.aws_secrets[local.secret_name].tags
+}
 resource "aws_secretsmanager_secret" "this_secret" {
   name                    = local.secret_name
   description             = var.aws_secrets[local.secret_name].secret_description
   recovery_window_in_days = var.aws_secrets[local.secret_name].secret_recovery_window_days
   kms_key_id              = aws_kms_key.secrets.arn
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -59,15 +108,11 @@ resource "aws_secretsmanager_secret" "this_secret" {
       Resource = "*"
     }]
   })
-
   tags = var.aws_secrets[local.secret_name].tags
 }
-
 output "secret_id" {
   value = aws_secretsmanager_secret.this_secret.id
 }
-
-
 resource "aws_iam_policy" "access_to_secret_kms" {
   name =  "cc-access-to-kms-${local.secret_name}"
   policy = jsonencode({
@@ -86,13 +131,11 @@ resource "aws_iam_policy" "access_to_secret_kms" {
   })
   tags = var.aws_secrets[local.secret_name].tags
 }
-
 resource "aws_iam_role_policy_attachment" "attach_kms_access_policy" {
   count = length(var.aws_secrets[local.secret_name].github_repos_to_allow) > 0 ? 1 : 0
   role = aws_iam_role.secret_iam_role[0].name
   policy_arn = aws_iam_policy.access_to_secret_kms.arn
 }
-
 resource "aws_iam_role_policy_attachment" "attach_kms_access_policy_iam_roles" {
   for_each = toset(var.aws_secrets[local.secret_name].iam_roles)
   role = each.key
