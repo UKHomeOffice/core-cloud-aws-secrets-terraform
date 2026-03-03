@@ -30,8 +30,8 @@ resource "aws_iam_role" "secret_iam_role" {
 
 data "aws_iam_policy_document" "secrets_kms" {
 
-  # Required by AWS — allows IAM policies in the account to control key access.
-  # Without this the key can become permanently unmanageable.
+  # Grants the account root explicit admin actions to keep the key manageable.
+  # kms:* is avoided to satisfy Checkov CKV_AWS_356.
   statement {
     sid    = "EnableIAMUserPermissions"
     effect = "Allow"
@@ -39,7 +39,22 @@ data "aws_iam_policy_document" "secrets_kms" {
       type        = "AWS"
       identifiers = ["arn:aws:iam::${var.aws_account_id}:root"]
     }
-    actions   = ["kms:*"]
+    actions = [
+      "kms:Create*",
+      "kms:Describe*",
+      "kms:Enable*",
+      "kms:List*",
+      "kms:Put*",
+      "kms:Update*",
+      "kms:Revoke*",
+      "kms:Disable*",
+      "kms:Get*",
+      "kms:Delete*",
+      "kms:TagResource",
+      "kms:UntagResource",
+      "kms:ScheduleKeyDeletion",
+      "kms:CancelKeyDeletion",
+    ]
     resources = ["*"]
   }
 
@@ -58,9 +73,9 @@ data "aws_iam_policy_document" "secrets_kms" {
       )
     }
     actions = [
-      "kms:Decrypt",         # decrypt the secret value
-      "kms:GenerateDataKey", # encrypt data at rest
-      "kms:DescribeKey",     # validate the key is active
+      "kms:Decrypt",
+      "kms:GenerateDataKey",
+      "kms:DescribeKey",
     ]
     resources = ["*"]
   }
