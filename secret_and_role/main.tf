@@ -29,6 +29,9 @@ resource "aws_iam_role" "secret_iam_role" {
 }
 
 data "aws_iam_policy_document" "secrets_kms" {
+
+  # Required by AWS — allows IAM policies in the account to control key access.
+  # Without this the key can become permanently unmanageable.
   statement {
     sid    = "EnableIAMUserPermissions"
     effect = "Allow"
@@ -39,6 +42,9 @@ data "aws_iam_policy_document" "secrets_kms" {
     actions   = ["kms:*"]
     resources = ["*"]
   }
+
+  # Grants the module-created Dynatrace secret-access role the minimum actions
+  # required for Secrets Manager to read the secret value.
   statement {
     sid    = "DynatraceSecretAccessRole"
     effect = "Allow"
@@ -52,12 +58,17 @@ data "aws_iam_policy_document" "secrets_kms" {
       )
     }
     actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey",
-      "kms:DescribeKey",
+      "kms:Decrypt",         # decrypt the secret value
+      "kms:GenerateDataKey", # encrypt data at rest
+      "kms:DescribeKey",     # validate the key is active
     ]
     resources = ["*"]
   }
+
+  # Grants platform engineers using the AWS Identity Centre AdministratorAccess
+  # role access to inspect and troubleshoot secrets.
+  # A StringLike condition is used instead of a direct Principal ARN because
+  # Identity Centre appends a random suffix to the role name on every re-provision.
   statement {
     sid    = "AllowSSOAdministratorAccessRole"
     effect = "Allow"
