@@ -69,7 +69,8 @@ data "aws_iam_policy_document" "secrets_kms" {
         length(aws_iam_role.secret_iam_role) > 0
           ? ["arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role.secret_iam_role[0].name}"]
           : [],
-        formatlist("arn:aws:iam::${var.aws_account_id}:role/%s", var.aws_secrets[local.secret_name].iam_roles)
+        formatlist("arn:aws:iam::${var.aws_account_id}:role/%s", var.aws_secrets[local.secret_name].iam_roles),
+        ["arn:aws:iam::${var.aws_account_id}:role/dynatrace-eks-ext-secrets"]
       )
     }
     actions = [
