@@ -112,6 +112,11 @@ resource "aws_kms_key" "secrets" {
   tags                = var.aws_secrets[local.secret_name].tags
 }
 
+resource "aws_kms_alias" "secrets" {
+  name          = "alias/cc-secrets/${local.secret_name}"
+  target_key_id = aws_kms_key.secrets.key_id
+}
+
 resource "aws_secretsmanager_secret" "this_secret" {
   name                    = local.secret_name
   description             = var.aws_secrets[local.secret_name].secret_description
