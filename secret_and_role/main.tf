@@ -58,6 +58,23 @@ data "aws_iam_policy_document" "secrets_kms" {
     resources = ["*"]
   }
 
+  # Grants the Terragrunt pipeline role data-plane access to create secrets.
+  statement {
+    sid    = "AllowTerraformPipelineRole"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.aws_account_id}:role/AWS-Terragrunt-Dynatrace-Apply-Role"]
+    }
+    actions = [
+      "kms:GenerateDataKey",
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:CreateGrant",
+    ]
+    resources = ["*"]
+  }
+
   # Grants the module-created Dynatrace secret-access role the minimum actions
   # required for Secrets Manager to read the secret value.
   statement {
